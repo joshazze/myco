@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="myco">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="40%" r="65%">
+      <stop offset="0%" stop-color="#0e2620"/>
+      <stop offset="100%" stop-color="#07090a"/>
+    </radialGradient>
+    <linearGradient id="stem" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#34d399"/>
+    </linearGradient>
+    <linearGradient id="leafA" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#34d399"/>
+    </linearGradient>
+    <linearGradient id="leafB" x1="1" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#b45309"/>
+      <stop offset="100%" stop-color="#fbbf24"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <!-- Mycelium filaments radiating from center -->
+  <g stroke="#34d399" stroke-width="2" stroke-linecap="round" opacity="0.28" fill="none">
+    <path d="M256 320 L80 140"/>
+    <path d="M256 320 L432 140"/>
+    <path d="M256 320 L40 280"/>
+    <path d="M256 320 L472 280"/>
+    <path d="M256 320 L120 460"/>
+    <path d="M256 320 L392 460"/>
+    <path d="M256 320 L256 60"/>
+  </g>
+  <!-- Stem -->
+  <path d="M256 410 L256 220" stroke="url(#stem)" stroke-width="18" stroke-linecap="round" fill="none"/>
+  <!-- Left leaf (amber) -->
+  <path d="M256 290 C 200 270, 160 230, 140 180 C 200 200, 240 240, 256 290 Z" fill="url(#leafB)"/>
+  <!-- Right leaf (green) -->
+  <path d="M256 250 C 312 230, 352 200, 372 150 C 312 170, 272 200, 256 250 Z" fill="url(#leafA)"/>
+  <!-- Sprout dot -->
+  <circle cx="256" cy="210" r="14" fill="#fbbf24"/>
+</svg>
