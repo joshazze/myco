@@ -26,17 +26,40 @@ export function setRawEncryptedBlob(blobStr) {
   localStorage.setItem(DATA_KEY, blobStr);
 }
 
-export async function loadEncryptedData() {
+// Sentinel errors pra UI de recovery distinguir "blob ausente" de "blob ilegível".
+export class MissingDataError extends Error {
+  constructor() { super('missing-data'); this.name = 'MissingDataError'; }
+}
+export class CorruptDataError extends Error {
+  constructor(cause) { super('corrupt-data'); this.name = 'CorruptDataError'; this.cause = cause; }
+}
+
+export async function loadEncryptedData({ allowCreate = false } = {}) {
   const key = getKey();
   if (!key) throw new Error('Sem chave em memória.');
   const raw = localStorage.getItem(DATA_KEY);
   if (!raw) {
-    const fresh = emptyData();
-    await persistEncrypted(fresh);
-    return fresh;
+    if (allowCreate) {
+      const fresh = emptyData();
+      await persistEncrypted(fresh);
+      return fresh;
+    }
+    console.warn('[myco] loadEncryptedData: blob ausente mas allowCreate=false');
+    throw new MissingDataError();
   }
-  const blob = JSON.parse(raw);
-  return decryptJSON(key, blob);
+  let blob;
+  try {
+    blob = JSON.parse(raw);
+  } catch (e) {
+    console.warn('[myco] loadEncryptedData: blob JSON inválido', e);
+    throw new CorruptDataError(e);
+  }
+  try {
+    return await decryptJSON(key, blob);
+  } catch (e) {
+    console.warn('[myco] loadEncryptedData: decrypt falhou', e);
+    throw new CorruptDataError(e);
+  }
 }
 
 export async function persistEncrypted(data) {

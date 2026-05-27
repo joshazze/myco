@@ -111,6 +111,10 @@ export async function lockNow() {
 }
 
 export async function wipeAuthAndData() {
+  console.warn('[myco] wipeAuthAndData() chamado em', new Date().toISOString());
+  try {
+    localStorage.setItem('myco:wipedAt', new Date().toISOString());
+  } catch { /* storage cheio, ignora */ }
   await clearMasterKey();
   localStorage.removeItem(AUTH_KEY);
   localStorage.removeItem('myco:data');

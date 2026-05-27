@@ -257,6 +257,19 @@ a:active { opacity: 0.7; }
 
 .field textarea { resize: vertical; min-height: 80px; font-family: inherit; }
 
+/* Date inputs: garantir contraste e tap target no iOS/Android */
+.field input[type="date"], .field input.date-input {
+  font-size: 16px;            /* anti-zoom iOS */
+  color-scheme: dark;
+  font-family: ui-monospace, SFMono-Regular, 'JetBrains Mono', monospace;
+  letter-spacing: 0.03em;
+}
+.field input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.85) sepia(0.4) saturate(3) hue-rotate(70deg);
+  opacity: 0.9;
+  cursor: pointer;
+}
+
 .field .hint {
   font-size: 13px;
   color: var(--text-2);
@@ -1042,10 +1055,13 @@ a.stat:active { transform: translateY(1px); }
 /* Compost ------------------------------------------------- */
 .compost-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr;
   gap: 10px;
 }
 @media (min-width: 640px) {
+  .compost-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 960px) {
   .compost-grid { grid-template-columns: repeat(4, 1fr); }
 }
 .compost-box-card {
@@ -1210,6 +1226,49 @@ a.stat:active { transform: translateY(1px); }
 }
 .lot-history-icon svg { width: 14px; height: 14px; }
 .lot-history-head { display: flex; align-items: baseline; }
+
+/* Harvests (chorume) -------------------------------------- */
+.harvest-block {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.harvest-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+.harvest-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.harvest-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: flex-start;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+}
+.harvest-icon {
+  color: var(--accent);
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.harvest-icon svg { width: 12px; height: 12px; }
+.harvest-body { min-width: 0; }
 
 /* Alerts -------------------------------------------------- */
 .alert-card {

@@ -66,9 +66,9 @@ export async function renderSignup() {
       submit.textContent = 'Aguarde, preparando seu jardim…';
       try {
         const meta = await signup(emailV, pwdV);
-        const data = await loadEncryptedData();
+        const data = await loadEncryptedData({ allowCreate: true });
         setSession(data, meta);
-        navigate('/');
+        navigate('/backup?firstRun=1');
       } catch (e) {
         errSlot.appendChild(errorBox(e.message || 'Falha ao criar conta.'));
         submit.disabled = false;

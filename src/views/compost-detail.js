@@ -7,8 +7,12 @@ import {
   emptyLot,
   deleteLot,
   updateLotNotes,
+  addHarvest,
+  deleteHarvest,
   selectActiveLot,
   selectLotsForBox,
+  selectHarvestsForLot,
+  HARVEST_INTERVAL_DAYS,
 } from '../lib/state.js';
 import { rerender, navigate } from '../lib/router.js';
 import { fmtDateFull, toDateLocal, fromDateLocal, daysBetween, fmtDaysAgo } from '../lib/format.js';
@@ -136,7 +140,121 @@ function activeLotCard(lot) {
       `tempo de maturação: ${ripenDays}d`));
   }
 
+  card.appendChild(harvestBlock(lot));
+
   return card;
+}
+
+function harvestBlock(lot) {
+  const wrap = h('div', { class: 'harvest-block' });
+  const harvests = selectHarvestsForLot(lot.id);
+  const last = harvests[0] || null;
+
+  let statusLine;
+  if (!last) {
+    statusLine = h('div', { class: 'small dim mono' },
+      `nenhuma extração ainda · ciclo de ${HARVEST_INTERVAL_DAYS}d`);
+  } else {
+    const daysSince = daysBetween(last.dateISO, new Date().toISOString());
+    const overdue = daysSince > HARVEST_INTERVAL_DAYS;
+    statusLine = h('div', { class: 'row small mono', style: { gap: '8px', flexWrap: 'wrap' } },
+      h('span', { class: 'dim' }, `última há ${daysSince}d`),
+      overdue
+        ? h('span', { class: 'pill warm' }, h('span', { class: 'pill-dot' }), `atrasada ${daysSince - HARVEST_INTERVAL_DAYS}d`)
+        : h('span', { class: 'pill' }, h('span', { class: 'pill-dot' }), `próxima em ${HARVEST_INTERVAL_DAYS - daysSince}d`),
+    );
+  }
+
+  wrap.appendChild(h('div', { class: 'harvest-head' },
+    h('div', null,
+      h('div', { class: 'subhead', style: { margin: '0 0 4px' } }, 'Extrações de chorume'),
+      statusLine,
+    ),
+    h('button', {
+      class: 'btn btn-primary btn-sm',
+      onClick: () => openHarvestModal(lot),
+    }, icon('plus'), 'Registrar'),
+  ));
+
+  if (harvests.length) {
+    const list = h('div', { class: 'harvest-list' });
+    for (const harv of harvests) list.appendChild(harvestRow(lot, harv));
+    wrap.appendChild(list);
+  }
+
+  return wrap;
+}
+
+function harvestRow(lot, harv) {
+  return h('div', { class: 'harvest-row' },
+    h('div', { class: 'harvest-icon' }, icon('droplet')),
+    h('div', { class: 'harvest-body' },
+      h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap' } },
+        h('strong', { class: 'mono' }, shortDate(harv.dateISO)),
+        harv.quantity
+          ? h('span', { class: 'mono small' }, harv.quantity)
+          : h('span', { class: 'small dim' }, 'sem qtd'),
+      ),
+      harv.notes
+        ? h('div', { class: 'small dim', style: { marginTop: '2px' } }, harv.notes)
+        : null,
+    ),
+    h('button', {
+      class: 'btn btn-sm btn-ghost',
+      onClick: async () => {
+        const ok = await confirm(`Apagar extração de ${shortDate(harv.dateISO)}?`,
+          { confirmLabel: 'Apagar', variant: 'btn-danger' });
+        if (ok) { await deleteHarvest(lot.id, harv.id); rerender(); }
+      },
+    }, icon('trash')),
+  );
+}
+
+async function openHarvestModal(lot) {
+  const date = h('input', {
+    type: 'date',
+    class: 'date-input',
+    value: toDateLocal(new Date().toISOString()),
+  });
+  const qty = h('input', {
+    type: 'text',
+    placeholder: '500ml, 1L, meio balde…',
+    inputmode: 'text',
+  });
+  const notes = h('textarea', { placeholder: 'observações (opcional)' });
+
+  const body = h('div', null,
+    h('p', { class: 'muted small' },
+      `Registra a tiragem de chorume. Ciclo típico: ${HARVEST_INTERVAL_DAYS} dias.`),
+    h('div', { class: 'field' },
+      h('label', null, 'Data da extração'),
+      date,
+      h('div', { class: 'hint' }, 'toque pra alterar — vem com hoje preenchido'),
+    ),
+    h('div', { class: 'field' }, h('label', null, 'Quantidade'), qty),
+    h('div', { class: 'field' }, h('label', null, 'Observação'), notes),
+  );
+
+  const ok = await openModal({
+    title: `Extração · Caixa ${lot.boxNumber}`,
+    body,
+    actions: [
+      { label: 'Cancelar', variant: 'btn-ghost', value: null },
+      {
+        label: 'Registrar',
+        variant: 'btn-primary',
+        onClick: async (_, close) => {
+          await addHarvest(lot.id, {
+            dateISO: fromDateLocal(date.value),
+            quantity: qty.value,
+            notes: notes.value,
+          });
+          close(true);
+        },
+      },
+    ],
+  });
+  if (ok) rerender();
 }
 
 function phaseStep(label, iso, active) {
