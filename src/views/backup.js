@@ -1,5 +1,6 @@
 import { h, icon, errorBox } from '../components/ui.js';
 import { openModal } from '../components/modal.js';
+import { currentQuery } from '../lib/router.js';
 import {
   exportEncryptedBackup,
   importEncryptedBackup,
@@ -10,11 +11,25 @@ import { getState } from '../lib/state.js';
 export async function renderBackup() {
   const { data } = getState();
   const container = h('div');
+  const firstRun = currentQuery().get('firstRun') === '1';
 
   container.appendChild(h('div', { class: 'section-head' },
     h('h2', null, 'Backup'),
     h('span', { class: 'pill' }, h('span', { class: 'pill-dot' }), 'cifrado'),
   ));
+
+  if (firstRun) {
+    container.appendChild(h('div', { class: 'alert-card alert-warm', style: { marginBottom: '14px' } },
+      h('div', { class: 'alert-icon' }, icon('warning')),
+      h('div', { class: 'alert-body' },
+        h('strong', null, 'Antes de tudo: exporte um backup vazio'),
+        h('div', { class: 'small muted' },
+          'Esse arquivo cifrado é sua âncora de recuperação. Se algum dia o navegador apagar o storage, '
+          + 'você importa esse backup e cai exatamente onde estava — desde que tenha a mesma senha.'),
+      ),
+      h('a', { class: 'btn btn-ghost btn-sm', href: '#/' }, 'Pular'),
+    ));
+  }
 
   container.appendChild(h('p', { class: 'muted' },
     'Exporta um JSON cifrado com TUDO (vasos, setores, adubações, lotes, fotos). Pra abrir em outro device ou recuperar, ',

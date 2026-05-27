@@ -44,10 +44,15 @@ function typeSelector({ initial }) {
 function dateField(initialISO) {
   const input = h('input', {
     type: 'date',
+    class: 'date-input',
     value: toDateLocal(initialISO || new Date().toISOString()),
   });
   return {
-    el: h('div', { class: 'field' }, h('label', null, 'Data'), input),
+    el: h('div', { class: 'field' },
+      h('label', null, 'Data da adubação'),
+      input,
+      h('div', { class: 'hint' }, 'toque pra alterar — vem com hoje preenchido'),
+    ),
     get value() { return fromDateLocal(input.value) || new Date().toISOString(); },
   };
 }

@@ -39,7 +39,7 @@ export async function renderUnlock() {
       submit.textContent = 'Aguarde…';
       try {
         const m = await unlockWithPassword(pwdV);
-        const data = await loadEncryptedData();
+        const data = await loadEncryptedData({ allowCreate: true });
         setSession(data, m);
         navigate('/');
       } catch (e) {

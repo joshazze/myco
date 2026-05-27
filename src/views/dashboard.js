@@ -40,6 +40,10 @@ export async function renderDashboard() {
     statTile('Lotes composto', data.compostLots.length, 'compost', '#/composto'),
   ));
 
+  // Standalone nag — se não está adicionado à tela inicial, storage sofre risco de eviction
+  const standaloneCard = renderStandaloneNagIfNeeded();
+  if (standaloneCard) container.appendChild(standaloneCard);
+
   // Backup nag
   if (isBackupNagDue(data)) {
     container.appendChild(h('div', { class: 'alert-card alert-warm' },
@@ -196,6 +200,39 @@ function activeLotCard(lot, phase) {
         : `${daysBetween(lot.startedISO, today)}d desde início`,
     ),
   );
+}
+
+const STANDALONE_DISMISS_KEY = 'myco:standaloneNagDismissed';
+
+function renderStandaloneNagIfNeeded() {
+  if (typeof window === 'undefined') return null;
+  const standalone =
+    window.matchMedia?.('(display-mode: standalone)').matches === true ||
+    window.navigator.standalone === true;
+  if (standalone) return null;
+  if (localStorage.getItem(STANDALONE_DISMISS_KEY)) return null;
+
+  const ua = navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(ua);
+  const tip = isIOS
+    ? 'No Safari, toque no ícone de compartilhar e escolha "Adicionar à Tela de Início". Sem isso, o navegador pode apagar seus dados depois de alguns dias.'
+    : 'No menu do navegador, escolha "Instalar app" / "Adicionar à tela inicial". Sem isso, o navegador pode apagar seus dados depois de alguns dias.';
+
+  const card = h('div', { class: 'alert-card alert-warm', style: { marginBottom: '12px' } },
+    h('div', { class: 'alert-icon' }, icon('warning')),
+    h('div', { class: 'alert-body' },
+      h('strong', null, 'Adicione o myco à tela inicial'),
+      h('div', { class: 'small muted' }, tip),
+    ),
+    h('button', {
+      class: 'btn btn-ghost btn-sm',
+      onClick: () => {
+        localStorage.setItem(STANDALONE_DISMISS_KEY, new Date().toISOString());
+        card.remove();
+      },
+    }, 'Depois'),
+  );
+  return card;
 }
 
 function updateBadge(count) {

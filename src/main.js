@@ -1,12 +1,14 @@
 import './styles.css';
 import { defineRoute, setNotFound, setBeforeEach, start, navigate } from './lib/router.js';
 import { hasData, setSession } from './lib/state.js';
-import { loadEncryptedData } from './lib/storage.js';
+import { loadEncryptedData, MissingDataError, CorruptDataError } from './lib/storage.js';
 import { hasAuth, tryAutoUnlock, getKey, getMeta } from './lib/auth.js';
+import { recordBoot } from './lib/diagnostics.js';
 import { h } from './components/ui.js';
 import { topBar, bottomNav } from './components/nav.js';
 import { renderSignup } from './views/signup.js';
 import { renderUnlock } from './views/unlock.js';
+import { renderRecover } from './views/recover.js';
 import { renderDashboard } from './views/dashboard.js';
 import { renderSectors } from './views/sectors.js';
 import { renderSectorDetail } from './views/sector-detail.js';
@@ -29,6 +31,7 @@ function shell(view) {
 
 defineRoute('/signup', () => renderSignup());
 defineRoute('/unlock', () => renderUnlock());
+defineRoute('/recover', () => renderRecover());
 defineRoute('/', async () => shell(await renderDashboard()));
 defineRoute('/pokedex', async () => shell(await renderPots()));
 defineRoute('/pokedex/:id', async (params) => shell(await renderPotDetail(params)));
@@ -76,13 +79,30 @@ setBeforeEach(async (path) => {
   }
 
   if (!hasData()) {
-    const data = await loadEncryptedData();
-    setSession(data, getMeta());
+    try {
+      const data = await loadEncryptedData();
+      setSession(data, getMeta());
+    } catch (e) {
+      if (e instanceof MissingDataError || e instanceof CorruptDataError) {
+        console.warn('[myco] data load falhou:', e.name, '— redirecionando pra /recover');
+        if (cleanPath !== '/recover') {
+          navigate('/recover');
+          return true;
+        }
+        return false;
+      }
+      throw e;
+    }
+  }
+  if (cleanPath === '/recover') {
+    navigate('/');
+    return true;
   }
 
   return false;
 });
 
+recordBoot();
 start(app);
 
 // PWA: register service worker only in production

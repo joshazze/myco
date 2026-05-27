@@ -34,6 +34,7 @@ export function setSession(data, meta) {
   data.compostLots   ||= [];
   if (typeof data._nextPotSeq !== 'number') data._nextPotSeq = nextSeqFromPots(data.pots);
   data.settings      ||= { lastBackupISO: null, createdAt: new Date().toISOString() };
+  for (const lot of data.compostLots) lot.harvests ||= [];
   state.data = data;
   state.meta = meta;
   notify();
@@ -240,6 +241,7 @@ export async function startLot({ boxNumber, startedISO, notes }) {
       emptiedISO: null,
       notes: (notes || '').trim(),
       destination: '',
+      harvests: [],
       createdAt: nowISO(),
     };
     d.compostLots.push(lot);
@@ -277,6 +279,53 @@ export async function deleteLot(id) {
   await mutate((d) => {
     d.compostLots = d.compostLots.filter((l) => l.id !== id);
   });
+}
+
+export const HARVEST_INTERVAL_DAYS = 30;
+
+export async function addHarvest(lotId, { dateISO, quantity, notes }) {
+  let harvest;
+  await mutate((d) => {
+    const l = d.compostLots.find((x) => x.id === lotId);
+    if (!l) return;
+    l.harvests ||= [];
+    harvest = {
+      id: uid(),
+      dateISO: dateISO || nowISO(),
+      quantity: (quantity || '').trim(),
+      notes: (notes || '').trim(),
+      createdAt: nowISO(),
+    };
+    l.harvests.push(harvest);
+  });
+  return harvest;
+}
+
+export async function deleteHarvest(lotId, harvestId) {
+  await mutate((d) => {
+    const l = d.compostLots.find((x) => x.id === lotId);
+    if (!l || !l.harvests) return;
+    l.harvests = l.harvests.filter((h) => h.id !== harvestId);
+  });
+}
+
+export function selectHarvestsForLot(lotId) {
+  if (!state.data) return [];
+  const lot = state.data.compostLots.find((l) => l.id === lotId);
+  if (!lot || !lot.harvests) return [];
+  return [...lot.harvests].sort((a, b) => b.dateISO.localeCompare(a.dateISO));
+}
+
+export function selectLastHarvestForBox(boxNumber) {
+  if (!state.data) return null;
+  let latest = null;
+  for (const lot of state.data.compostLots) {
+    if (lot.boxNumber !== boxNumber) continue;
+    for (const h of lot.harvests || []) {
+      if (!latest || h.dateISO > latest.dateISO) latest = h;
+    }
+  }
+  return latest;
 }
 
 /* =================================================================
